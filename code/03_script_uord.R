@@ -143,7 +143,21 @@ data("BCI", "BCI.env")
 
 # 1. Using the BCI dataset, calculate a dissimilarity matrix
 #    (e.g., Bray-Curtis) and perform NMDS.
-     
+       
+       data("BCI")
+       data("BCI.env")
+       
+       head(BCI.env)  
+       
+       obj_nmds <- metaMDS(BCI, distance = "bray", k = 2)
+       
+       df_nmds <- BCI.env %>%
+         as_tibble() %>%
+         bind_cols(as_tibble(obj_nmds$points)) %>%
+         janitor::clean_names()
+       
+       head(df_nmds)
+       
        
 # 2. Visualize sites in NMDS space.
 #    - How are sites positioned relative to each other?
@@ -151,8 +165,14 @@ data("BCI", "BCI.env")
 #      characteristics of your choice.
        
        
-       
+       df_nmds %>% 
+         ggplot(aes(x = mds1, y = mds2, color = habitat)) +
+         geom_point(size = 3)
        
 # 3. Perform PERMANOVA to examine if communities are grouped
 #    by the environmental variable you selected.
-   
+       
+       m_bray <- vegdist(BCI, method = "bray")
+       adonis2(m_bray ~ Habitat, data = BCI.env)
+       
+       
