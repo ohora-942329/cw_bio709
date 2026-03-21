@@ -263,25 +263,48 @@ df_bison %>%
 #    - Coordinates: Lat 39.09300	Lon -96.57500
 
 climate_data <- download_daymet(
+  site = "konza",
   lat = 39.09300,
   lon = -96.57500,
   start = 1994,
-  end = 2020
-)
+  end = 2020,
+  internal = TRUE
+) %>% 
+  {.[["data"]]} %>% 
+  janitor::clean_names() %>% 
+  as_tibble() %>% 
+  mutate(
+    date = as.Date(paste(year, yday, sep = "-"),
+                   format = "%Y-%j")
+  ) %>% 
+  
+  relocate(date)
 
-climate_df <- climate_data$data %>%
-  group_by(year) %>%
-  summarise(
-    mean_temp = mean((`tmax..deg.c.` + `tmin..deg.c.`) / 2, na.rm = TRUE),
-    total_precip = sum(`prcp..mm.day.`, na.rm = TRUE)
-  )
+climate_df <- climate_data %>%
+  group_by(year) %>% 
+  summarize(cprcp = sum(prcp_mm_day))
 
-climate_df
 
 # Merged 
 
 bison_climate <- bison_summary %>%
   left_join(climate_df, by = c("rec_year" = "year"))
+
+df_bison_climate <- bison_climate %>%
+  rename(
+    year = rec_year,
+    weight = mean_weight
+  )
+  
+# plot weight vs climate
+
+ggplot(df_bison_climate,
+       aes(x = year, y = weight, color = animal_sex)) +
+  geom_line() +
+  geom_point() +
+  theme_bw() +
+  labs(y = "Mean Body Mass", x = "Year")
+
 
 # 5. Perform a time-series analysis to examine whether selected
 #    climate variables influence annual bison body mass.
@@ -290,12 +313,34 @@ bison_climate <- bison_summary %>%
 
 
 # ---------------------------
+m_male <- df_bison_climate %>% 
+  filter(animal_sex == "M") %>% 
+  arrange(year) %>% 
+  { auto.arima(
+    y = .$weight,
+    xreg = .$cprcp,
+    stepwise = FALSE,
+    d = 0
+  )
+  }
 
-df_bison_climate <- bison_climate %>% 
-  rename(year = rec_year,
-         weight = mean_weight) %>% 
-  arrange(animal_sex, year)
+confint.default(m_male)
 
+## with lag effect included 
+
+
+m_female <- df_bison_climate %>% 
+  filter(animal_sex == "F") %>% 
+  arrange(year) %>% 
+  { auto.arima(
+    y = .$weight,
+    xreg = .$cprcp,
+    stepwise = FALSE,
+    d = 0
+  )
+  }
+
+confint.default(m_female)
 
 
 # 6. Using your fitted model, compare observed bison body mass
