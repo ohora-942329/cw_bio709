@@ -53,6 +53,8 @@ summary(mod_emg) ## i could say there is significant difference between the two 
 link2 <- "https://raw.githubusercontent.com/aterui/cw_bio709/master/data_fmt/data_lake_invert.rds"
 df_inv <- readRDS(url(link2, "rb"))
 
+head(df_inv)
+
 # This dataset 'df_inv' contains 100 observations from 10 lakes.
 # Within each lake, 10 plots were established, spaced ~500 m apart.
 # At each plot, the following variables were measured:
@@ -122,17 +124,16 @@ summary(mod_prod)
 #     - Use appropriate probability distributions.
 #     - Use variable transformation if appropriate given the data.
 #     [4 points]
-
+library(lme4)
 library(piecewiseSEM)
 
-mod_a <- lm(prod ~ cond + substrate, data = df_inv)
-mod_b <- lm(log(hb) ~ prod, data = df_inv)
-mod_c <- lm(s ~ prod , data = df_inv)
+mod_a <- lmer(prod ~ cond + substrate + (1 | lake), data = df_inv)
+mod_b <- lmer(log(hb) ~ prod + (1 | lake), data = df_inv)
+mod_c <- lmer(s ~ prod + (1 | lake), data = df_inv)
 
 sem_mod <- psem(mod_a, mod_b, mod_c)
-
 summary(sem_mod)
-plot(sem_mod)
+
 # the result shows in most cases the path is significant and supported 
 # dataset 3 ---------------------------------------------------------------
 
@@ -199,7 +200,7 @@ df_pca <- data.frame(
   nutrient = nutrient
 )
 
-mod_pc1 <- lm(nutrient ~ pc1, data = df_pca)
+mod_pc1 <- lm(pc1 ~ nutrient, data = df_pca)
 summary(mod_pc1)
 
 # dataset 4 ---------------------------------------------------------------
