@@ -245,4 +245,12 @@ plot(df_combined$sunspots,
 abline(lm(discharge ~ sunspots, data = df_combined), col = "blue")
 
 model <- lm(discharge ~ sunspots, data = df_combined)
-summary(model) # the p-value is almost 0.9 and I can say that there is no significant relationship between sunspot and discharge
+
+#I can use ARIMAX to account for non-independence of time series data and reduce error due to auto correction
+
+library(forecast)
+
+model_arimax <- auto.arima(df_combined$discharge,
+                           xreg = df_combined$sunspots)
+
+summary(model_arimax)
