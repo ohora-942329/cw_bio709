@@ -254,3 +254,4 @@ model_arimax <- auto.arima(df_combined$discharge,
                            xreg = df_combined$sunspots)
 
 summary(model_arimax)
+#the effect of sunspots is not statistically significant
